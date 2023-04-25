@@ -32,6 +32,12 @@ parser.add_argument('-r', '--repo', help='Repo to scan',
 
 parser.add_argument('-b', '--branch', help='Branch to scan',
                     dest='branch', required=True)
+
+parser.add_argument('-S', '--sender', help='gmail account to send the email FROM',
+                    dest='email_sender', required=True)
+
+parser.add_argument('-R', '--receiver', help='gmail account to send the email TO',
+                    dest='email_receiver', required=True)
 # parser.add_argument('-c', '--count', help='Number of commits to scan (default all)', dest='count', default=sys.maxsize, type=int)
 # parser.add_argument('-v', '--verbose', help='Verbose output', dest='verbose', action='store_true', default=False)
 args = parser.parse_args()
@@ -44,15 +50,15 @@ branch = args.branch
 
 # send the recent changes to an gmail:
 def sendeit(msg):
-    # Define email sender and receiver and subject
-    email_sender = 'sender@gmail.com'
+    # Define the email's components and shape it
+    sender = args.email_sender
+    receiver = args.email_receiver
     email_password = os.environ.get("EMAIL_PASSWORD")
-    email_receiver = 'receiver@gmail.com'
     subject = 'Recent changes on the repo'
-    # Shape an email
+
     em = EmailMessage()
-    em['From'] = email_sender
-    em['To'] = email_receiver
+    em['From'] = sender
+    em['To'] = receiver
     em['Subject'] = subject
     em.set_content(msg)
 
@@ -61,8 +67,8 @@ def sendeit(msg):
 
     # Log in and send the email
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
-        smtp.login(email_sender, email_password)
-        smtp.sendmail(email_sender, email_receiver, em.as_string())
+        smtp.login(sender, email_password)
+        smtp.sendmail(sender, receiver, em.as_string())
 
 
 def logit(log):
@@ -88,6 +94,7 @@ try:
         col.blue, repo_name, repo_url, col.end))
     subprocess.run("git clone -v {:s}".format(repo_url), capture_output=True,
                    text=True, shell=True, check=True)
+    print("{:s}successfully cloned!{:s}".format(col.green, col.end))
     os.chdir(repo_name)
     gitscanner()
 except subprocess.CalledProcessError as e:
