@@ -77,6 +77,7 @@ def logit(log):
 
 
 def gitscanner():
+    os.chdir(repo_name)
     subprocess.run("git fetch", capture_output=True,
                    text=True, shell=True, check=True)
     latest_changes = subprocess.run("git diff {:s} origin/{:s}".format(branch, branch),
@@ -95,14 +96,12 @@ try:
     subprocess.run("git clone -v {:s}".format(repo_url), capture_output=True,
                    text=True, shell=True, check=True)
     print("{:s}successfully cloned!{:s}".format(col.green, col.end))
-    os.chdir(repo_name)
     gitscanner()
 except subprocess.CalledProcessError as e:
     if e.returncode == 128:
         if os.path.isdir(repo_name):
             print("{:s}'{:s}' directory exists!{:s}".format(
                 col.green, repo_name, col.end))
-            os.chdir(repo_name)
             gitscanner()
         else:
             print("{:s}'{:s}' repository does not exist!{:s}".format(
