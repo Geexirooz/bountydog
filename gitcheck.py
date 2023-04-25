@@ -30,7 +30,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-r', '--repo', help='Repo to scan',
                     dest='repo', required=True)
 
-parser.add_argument('-b', '--branch', help='Branch to scan', dest='branch')
+parser.add_argument('-b', '--branch', help='Branch to scan',
+                    dest='branch', required=True)
 # parser.add_argument('-c', '--count', help='Number of commits to scan (default all)', dest='count', default=sys.maxsize, type=int)
 # parser.add_argument('-v', '--verbose', help='Verbose output', dest='verbose', action='store_true', default=False)
 args = parser.parse_args()
