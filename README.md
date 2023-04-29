@@ -1,4 +1,4 @@
-# bountydog
+# BountyDog
 
 Let's assume that:
 1. You have `foo.robot@gmail.com` account and its App Password is configured.
