@@ -94,7 +94,7 @@ def logit(log):
     """
     Write to a log file
     """
-    with open("./log.txt", "a") as f:
+    with open("/tmp/log.txt", "a") as f:
         f.write(log)
 
 
