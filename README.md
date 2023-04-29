@@ -5,7 +5,7 @@ Let's assume that:
 2. The robot's account's 16 chars password is `AVerySecretPassA`.
 3. Your personal account is `mypersonalgmail@gmail.com`.
 
-# Usage
+## Usage
 
 ### Command
 ```
