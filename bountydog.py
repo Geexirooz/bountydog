@@ -250,7 +250,11 @@ def main():
             check=True,
         )
         print("{:s}successfully cloned!{:s}".format(col.green, col.end))
-        bountydog()
+        print(
+            "{:s}No changes will be shown now, You can extract changes from the next commit to the repo{:s}".format(
+                col.grey, col.end
+            )
+        )
     except subprocess.CalledProcessError as e:
         if e.returncode == 128:
             if os.path.isdir(repo_name):
