@@ -9,6 +9,9 @@ import re
 
 
 class col:
+    """
+    A class to define colors for a nice output printing
+    """
     if sys.stdout.isatty():
         green = "\033[32m"
         blue = "\033[94m"
@@ -61,9 +64,11 @@ repo_url = args.repo
 branch = args.branch
 
 
-# send the recent changes to an gmail:
 def sendit(msg):
-    # Define the email's components and shape it
+    """
+    send the recent changes to a gmail account
+    """
+    # Define the email's components and build it
     sender = args.email_sender
     receiver = args.email_receiver
     email_password = os.environ.get("EMAIL_PASSWORD")
@@ -85,11 +90,17 @@ def sendit(msg):
 
 
 def logit(log):
-    with open("/tmp/log.txt", "a") as f:
+    """
+    write to a log file
+    """
+    with open("./log.txt", "a") as f:
         f.write(log)
 
 
 def run_diff(prg_file):
+    """
+    run git diff command on prg_file
+    """
     latest_changes = subprocess.run(
         "git diff origin/main -- programs/{:s}".format(prg_file),
         capture_output=True,
@@ -101,6 +112,10 @@ def run_diff(prg_file):
 
 
 def regextractor(latest_changes, removed_targets_regex, new_targets_regex):
+    """
+    Extract changed targets using regex
+    """
+    # find excluded targets 
     matched_removed_targets = re.findall(removed_targets_regex, latest_changes)
     rm_targets = []
     for matched_target in matched_removed_targets:
@@ -120,7 +135,9 @@ def regextractor(latest_changes, removed_targets_regex, new_targets_regex):
 
 
 def bugcrowd(bugcrowd_file):
-    # run git diff
+    """
+    extract bugcrowd changes
+    """
     latest_changes = run_diff(bugcrowd_file)
 
     removed_targets_regex = (
@@ -132,11 +149,14 @@ def bugcrowd(bugcrowd_file):
     latest_changes_list = regextractor(
         latest_changes, removed_targets_regex, new_targets_regex
     )
-    # find excluded matches
+
     return latest_changes_list
 
 
 def hackerone(hackerone_file):
+    """
+    extract hackerone changes
+    """
     latest_changes = run_diff(hackerone_file)
 
     removed_targets_regex = r"-\s*\"attributes\":\s{\n-\s*\"asset_type\":\s[^-]*-\s*\"asset_identifier\":\s\"([^\"]*)\""
@@ -150,6 +170,9 @@ def hackerone(hackerone_file):
 
 
 def intigriti(intigriti_file):
+    """
+    extract intigriti changes
+    """
     latest_changes = run_diff(intigriti_file)
 
     removed_targets_regex = (
@@ -167,6 +190,9 @@ def intigriti(intigriti_file):
 
 
 def yeswehack(yeswehack_file):
+    """
+    extract yeswehack changes
+    """
     latest_changes = run_diff(yeswehack_file)
     removed_targets_regex = r"-\s*\"scope\":\s\"([^\"]*)\"[^-]*-\s*\"scope_type\""
     new_targets_regex = r"\+\s*\"scope\":\s\"([^\"]*)\"[^\+]*\+\s*\"scope_type\""
@@ -196,10 +222,17 @@ def changes_extractor(program):
 
 
 def bountydog():
+    """
+    1.fetch the remote repository
+    2.create a msg including the changes 
+    3.pass the changes to sendit and logit functions to report them
+    4.merge the changes to the local repo
+    """
+    #fetch the remote repo
     os.chdir(repo_name)
-
     subprocess.run("git fetch", capture_output=True, text=True, shell=True, check=True)
 
+    #get a list of programs
     prg_files = (
         subprocess.run(
             "ls programs".format(branch, branch),
@@ -211,11 +244,16 @@ def bountydog():
         .stdout.strip()
         .split("\n")
     )
+    
     final_res = ""
     trailing = "######################### THE END #########################\n\n"
+    
+    #find the changes to each program
     for prg_file in prg_files:
         prg_name = prg_file.split(".")[0]
         latest_changes_list = changes_extractor(prg_file)
+        
+        #create a msg
         if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
             res = ""
             removed_targets, added_targets = latest_changes_list
@@ -226,16 +264,22 @@ def bountydog():
                 "\n".join(added_targets),
             )
             final_res = final_res + res
+    #final message
     final_res = final_res + trailing
     if final_res != trailing:
         logit(final_res)
         sendit(final_res)
 
+    #merge the changes
     subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
     return
 
 
 def main():
+    """
+    First tries to clone the repo if it is not present.
+    if present, it calls bountydog funtion to take it from there
+    """
     try:
         print(
             "{:s}Trying to clone '{:s}' from '{:s}'{:s}".format(
