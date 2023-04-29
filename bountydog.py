@@ -248,7 +248,9 @@ def bountydog():
                 )
 
         # Create a msg
-        if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
+        if latest_changes_list and (
+            len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0
+        ):
             res = ""
             removed_targets, added_targets = latest_changes_list
             res = "######################### REMOVED TARGETS FROM {:s} #########################\n\n{:s}\n\n######################### ADDED TARGETS TO {:s} #########################\n\n{:s}\n\n".format(
