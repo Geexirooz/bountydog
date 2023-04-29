@@ -203,25 +203,6 @@ def yeswehack(yeswehack_file):
     return latest_changes_list
 
 
-def changes_extractor(program):
-    if program == "bugcrowd.json":
-        latest_changes_list = bugcrowd(program)
-        if latest_changes_list:
-            return latest_changes_list
-    elif program == "hackerone.json":
-        latest_changes_list = hackerone(program)
-        if latest_changes_list:
-            return latest_changes_list
-    elif program == "intigriti.json":
-        latest_changes_list = intigriti(program)
-        if latest_changes_list:
-            return latest_changes_list
-    elif program == "yeswehack.json":
-        latest_changes_list = yeswehack(program)
-        if latest_changes_list:
-            return latest_changes_list
-
-
 def bountydog():
     """
     1.Fetch the remote repository
@@ -252,7 +233,20 @@ def bountydog():
     # Find the changes to each program
     for prg_file in prg_files:
         prg_name = prg_file.split(".")[0]
-        latest_changes_list = changes_extractor(prg_file)
+        # Python older than 3.10
+        if prg_file == "bugcrowd.json":
+            latest_changes_list = bugcrowd(prg_file)
+        elif prg_file == "hackerone.json":
+            latest_changes_list = hackerone(prg_file)
+        elif prg_file == "intigriti.json":
+            latest_changes_list = intigriti(prg_file)
+        elif prg_file == "yeswehack.json":
+            latest_changes_list = yeswehack(prg_file)
+        else:
+            sendit("Apparently new program is added to bugbounty-targets repository!")
+
+        # Python 3.10 and above
+
         # match prg_name:
         #    case "hackerone":
         #        latest_changes_list = hackerone(prg_file)
