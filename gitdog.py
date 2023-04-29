@@ -62,7 +62,7 @@ branch = args.branch
 
 
 # send the recent changes to an gmail:
-def sendeit(msg):
+def sendit(msg):
     # Define the email's components and shape it
     sender = args.email_sender
     receiver = args.email_receiver
@@ -195,7 +195,7 @@ def changes_extractor(program):
             return latest_changes_list
 
 
-def gitscanner():
+def bountydog():
     os.chdir(repo_name)
 
     subprocess.run("git fetch", capture_output=True, text=True, shell=True, check=True)
@@ -216,8 +216,6 @@ def gitscanner():
         prg_name = prg_file.split(".")[0]
         latest_changes_list = changes_extractor(prg_file)
         if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
-            print(latest_changes_list)
-            # sendeit(latest_changes)
             res = ""
             removed_targets, added_targets = latest_changes_list
             res = "######################### REMOVED TARGETS FROM {:s} #########################\n\n{:s}\n\n######################### ADDED TARGETS TO {:s} #########################\n\n{:s}\n\n".format(
@@ -227,7 +225,11 @@ def gitscanner():
                 "\n".join(added_targets),
             )
             final_res = final_res + res
+    final_res = (
+        final_res + "######################### THE END #########################\n\n"
+    )
     logit(final_res)
+    sendit(final_res)
 
     subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
     return
@@ -248,7 +250,7 @@ def main():
             check=True,
         )
         print("{:s}successfully cloned!{:s}".format(col.green, col.end))
-        gitscanner()
+        bountydog()
     except subprocess.CalledProcessError as e:
         if e.returncode == 128:
             if os.path.isdir(repo_name):
@@ -257,7 +259,7 @@ def main():
                         col.green, repo_name, col.end
                     )
                 )
-                gitscanner()
+                bountydog()
             else:
                 print(
                     "{:s}'{:s}' repository does not exist!{:s}".format(
