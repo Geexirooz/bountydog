@@ -212,6 +212,7 @@ def bountydog():
         .split("\n")
     )
     final_res = ""
+    trailing = "######################### THE END #########################\n\n"
     for prg_file in prg_files:
         prg_name = prg_file.split(".")[0]
         latest_changes_list = changes_extractor(prg_file)
@@ -225,11 +226,10 @@ def bountydog():
                 "\n".join(added_targets),
             )
             final_res = final_res + res
-    final_res = (
-        final_res + "######################### THE END #########################\n\n"
-    )
-    logit(final_res)
-    sendit(final_res)
+    final_res = final_res + trailing
+    if final_res != trailing:
+        logit(final_res)
+        sendit(final_res)
 
     subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
     return
