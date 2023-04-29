@@ -203,6 +203,25 @@ def yeswehack(yeswehack_file):
     return latest_changes_list
 
 
+def changes_extractor(program):
+    if program == "bugcrowd.json":
+        latest_changes_list = bugcrowd(program)
+        if latest_changes_list:
+            return latest_changes_list
+    elif program == "hackerone.json":
+        latest_changes_list = hackerone(program)
+        if latest_changes_list:
+            return latest_changes_list
+    elif program == "intigriti.json":
+        latest_changes_list = intigriti(program)
+        if latest_changes_list:
+            return latest_changes_list
+    elif program == "yeswehack.json":
+        latest_changes_list = yeswehack(program)
+        if latest_changes_list:
+            return latest_changes_list
+
+
 def bountydog():
     """
     1.Fetch the remote repository
@@ -233,24 +252,24 @@ def bountydog():
     # Find the changes to each program
     for prg_file in prg_files:
         prg_name = prg_file.split(".")[0]
-        match prg_name:
-            case "hackerone":
-                latest_changes_list = hackerone(prg_file)
-            case "bugcrowd":
-                latest_changes_list = bugcrowd(prg_file)
-            case "intigriti":
-                latest_changes_list = intigriti(prg_file)
-            case "yeswehack":
-                latest_changes_list = yeswehack(prg_file)
-            case _:
-                sendit(
-                    "Apparently new program is added to bugbounty-targets repository!"
-                )
+        latest_changes_list = changes_extractor(prg_file)
+        # match prg_name:
+        #    case "hackerone":
+        #        latest_changes_list = hackerone(prg_file)
+        #    case "bugcrowd":
+        #        latest_changes_list = bugcrowd(prg_file)
+        #    case "intigriti":
+        #        latest_changes_list = intigriti(prg_file)
+        #    case "yeswehack":
+        #        latest_changes_list = yeswehack(prg_file)
+        #    case _:
+        #        sendit(
+        #            "Apparently new program is added to bugbounty-targets repository!"
+        #        )
 
         # Create a msg
-        if latest_changes_list and (
-            len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0
-        ):
+        # if latest_changes_list and (len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0):
+        if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
             res = ""
             removed_targets, added_targets = latest_changes_list
             res = "######################### REMOVED TARGETS FROM {:s} #########################\n\n{:s}\n\n######################### ADDED TARGETS TO {:s} #########################\n\n{:s}\n\n".format(
