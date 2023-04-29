@@ -89,88 +89,75 @@ def logit(log):
         f.write(log)
 
 
-def bugcrowd(bugcrowd_file):
-    # run git diff
+def run_diff(prg_file):
     latest_changes = subprocess.run(
-        "git diff origin/main -- programs/{:s}".format(bugcrowd_file),
+        "git diff origin/main -- programs/{:s}".format(prg_file),
         capture_output=True,
         text=True,
         shell=True,
         check=True,
     ).stdout
+    return latest_changes
 
-    # parse the diff reponse
+
+def regextractor(latest_changes, removed_targets_regex, new_targets_regex):
+    matched_removed_targets = re.findall(removed_targets_regex, latest_changes)
+    rm_targets = []
+    for matched_target in matched_removed_targets:
+        if " " not in matched_target and "." in matched_target:
+            rm_targets.append(matched_target.strip())
+
+    # find included matches
+    matched_addeded_targets = re.findall(new_targets_regex, latest_changes)
+    new_targets = []
+    for matched_target in matched_addeded_targets:
+        if " " not in matched_target and "." in matched_target:
+            new_targets.append(matched_target.strip())
+
+    # return them as a list
+    latest_changes_list = [rm_targets, new_targets]
+    return latest_changes_list
+
+
+def bugcrowd(bugcrowd_file):
+    # run git diff
+    latest_changes = run_diff(bugcrowd_file)
+
     removed_targets_regex = (
         r"-\s*\"targets\":\s\[\n-[^{]*{\n-[^,]*,\n-\s*\"name\":\s\"([^\"]*)\","
     )
     new_targets_regex = (
         r"\+\s*\"targets\":\s\[\n\+[^{]*{\n\+[^,]*,\n\+\s*\"name\":\s\"([^\"]*)\","
     )
-
+    latest_changes_list = regextractor(
+        latest_changes, removed_targets_regex, new_targets_regex
+    )
     # find excluded matches
-    matched_removed_targets = re.findall(removed_targets_regex, latest_changes)
-
-    rm_targets = []
-    for matched_target in matched_removed_targets:
-        if " " not in matched_target and "." in matched_target:
-            rm_targets.append(matched_target.strip())
-
-    # find included matches
-    matched_addeded_targets = re.findall(new_targets_regex, latest_changes)
-
-    new_targets = []
-    for matched_target in matched_addeded_targets:
-        if " " not in matched_target and "." in matched_target:
-            new_targets.append(matched_target.strip())
-
-    # return them as a list
-    latest_changes = [rm_targets, new_targets]
-
-    return latest_changes
+    return latest_changes_list
 
 
 def hackerone(hackerone_file):
-    latest_changes = subprocess.run(
-        "git diff origin/main -- programs/{:s}".format(hackerone_file),
-        capture_output=True,
-        text=True,
-        shell=True,
-        check=True,
-    ).stdout
+    latest_changes = run_diff(hackerone_file)
 
     removed_targets_regex = r"-\s*\"attributes\":\s{\n-\s*\"asset_type\":\s[^-]*-\s*\"asset_identifier\":\s\"([^\"]*)\""
     new_targets_regex = r"\+\s*\"attributes\":\s{\n\+\s*\"asset_type\":\s[^-]*\+\s*\"asset_identifier\":\s\"([^\"]*)\""
 
-    matched_removed_targets = re.findall(removed_targets_regex, latest_changes)
+    latest_changes_list = regextractor(
+        latest_changes, removed_targets_regex, new_targets_regex
+    )
 
-    rm_targets = []
-    for matched_target in matched_removed_targets:
-        if " " not in matched_target and "." in matched_target:
-            rm_targets.append(matched_target.strip())
-
-    # find included matches
-    matched_addeded_targets = re.findall(new_targets_regex, latest_changes)
-
-    new_targets = []
-    for matched_target in matched_addeded_targets:
-        if " " not in matched_target and "." in matched_target:
-            new_targets.append(matched_target.strip())
-
-    # return them as a list
-    latest_changes = [rm_targets, new_targets]
-
-    return latest_changes
+    return latest_changes_list
 
 
 def changes_extractor(program):
     if program == "bugcrowd.json":
-        latest_changes = bugcrowd(program)
-        if latest_changes:
-            return latest_changes
+        latest_changes_list = bugcrowd(program)
+        if latest_changes_list:
+            return latest_changes_list
     elif program == "hackerone.json":
-        latest_changes = hackerone(program)
-        if latest_changes:
-            return latest_changes
+        latest_changes_list = hackerone(program)
+        if latest_changes_list:
+            return latest_changes_list
 
 
 def gitscanner():
@@ -192,11 +179,11 @@ def gitscanner():
     final_res = ""
     for prg_file in prg_files:
         prg_name = prg_file.split(".")[0]
-        latest_changes = changes_extractor(prg_file)
-        if latest_changes:
+        latest_changes_list = changes_extractor(prg_file)
+        if latest_changes_list:
             # sendeit(latest_changes)
             res = ""
-            removed_targets, added_targets = latest_changes
+            removed_targets, added_targets = latest_changes_list
             res = "Removed Targtes from {:s}:\n{:s}\n#########################\n#########################\nAdded Targets:\n{:s}\n".format(
                 prg_name,
                 "\n".join(removed_targets),
