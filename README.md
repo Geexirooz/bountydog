@@ -1,17 +1,17 @@
 # BountyDog
 
 Let's assume that:
-1. You have `foo.robot@gmail.com` account and its App Password is configured.
+1. You have `your.gmail.robot@gmail.com` account and its App Password is configured.
 2. The robot's account's 16 chars password is `AVerySecretPassA`.
-3. Your personal account is `mypersonalgmail@gmail.com`.
+3. Your personal account is `your.personal.account@gmail.com`.
 
 ## Usage
 
 ### Command
 ```
-EMAIL_PASSWORD=AVerySecretPassA python3 bountydog.py -r https://github.com/Osb0rn3/bugbounty-targets -b main -R mypersonalgmail@gmail.com -S foo.robot@gmail.com
+EMAIL_PASSWORD=AVerySecretPassA python3 bountydog.py -r https://github.com/Osb0rn3/bugbounty-targets -b main -R mypersonalgmail@gmail.com -S your.gmail.robot@gmail.com
 ```
 ### Crontab to run the command every 3 hours
 ```
-0 */3 * * * cd /PATH/TO/bountydog/; EMAIL_PASSWORD=AVerySecretPassA /usr/bin/python3 ./bountydog.py -r https://github.com/Osb0rn3/bugbounty-targets -b main -R mypersonalgmail@gmail.com -S foo.robot@gmail.com
+0 */3 * * * cd /PATH/TO/bountydog/; EMAIL_PASSWORD=AVerySecretPassA /usr/bin/python3 ./bountydog.py -r https://github.com/Osb0rn3/bugbounty-targets -b main -R your.personal.account@gmail.com -S your.gmail.robot@gmail.com
 ```
