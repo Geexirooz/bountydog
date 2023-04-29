@@ -19,17 +19,17 @@ EMAIL_PASSWORD=AVerySecretPassA python3 bountydog.py -r https://github.com/Osb0r
 ### Sample email
 when only HackerOne and Bugcrowd scope have been changed
 ```
-######################### REMOVED TARGETS FROM bugcrowd #########################
+######################### REMOVED TARGETS FROM Bugcrowd #########################
   
 1shoppingcart.com
 *.1shoppingcart.com
 
-######################### ADDED TARGETS TO bugcrowd #########################
+######################### ADDED TARGETS TO Bugcrowd #########################
 
 1shoppingcart.com
 *.1shoppingcart.com
 
-######################### REMOVED TARGETS FROM hackerone #########################
+######################### REMOVED TARGETS FROM Hackerone #########################
 
 go.hacker.one
 b5s.hackerone-ext-content.com
@@ -39,7 +39,7 @@ com.basecamp.hey
 help.bitso.com
 dev.bitso.com
 
-######################### ADDED TARGETS TO hackerone #########################
+######################### ADDED TARGETS TO Hackerone #########################
 
 go.hacker.one
 b5s.hackerone-ext-content.com
