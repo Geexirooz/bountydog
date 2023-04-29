@@ -149,6 +149,33 @@ def hackerone(hackerone_file):
     return latest_changes_list
 
 
+def intigriti(intigriti_file):
+    latest_changes = run_diff(intigriti_file)
+
+    removed_targets_regex = (
+        r"-\s*\"id\"[^\+]*-\s*\"type\"[^-]*-\s*\"endpoint\":\s\"([^\"]*)\""
+    )
+    new_targets_regex = (
+        r"\+\s*\"id\"[^\+]*\+\s*\"type\"[^\+]*\+\s*\"endpoint\":\s\"([^\"]*)\""
+    )
+
+    latest_changes_list = regextractor(
+        latest_changes, removed_targets_regex, new_targets_regex
+    )
+
+    return latest_changes_list
+
+
+def yeswehack(yeswehack_file):
+    latest_changes = run_diff(yeswehack_file)
+    removed_targets_regex = r"-\s*\"scope\":\s\"([^\"]*)\"[^-]*-\s*\"scope_type\""
+    new_targets_regex = r"\+\s*\"scope\":\s\"([^\"]*)\"[^\+]*\+\s*\"scope_type\""
+    latest_changes_list = regextractor(
+        latest_changes, removed_targets_regex, new_targets_regex
+    )
+    return latest_changes_list
+
+
 def changes_extractor(program):
     if program == "bugcrowd.json":
         latest_changes_list = bugcrowd(program)
@@ -156,6 +183,14 @@ def changes_extractor(program):
             return latest_changes_list
     elif program == "hackerone.json":
         latest_changes_list = hackerone(program)
+        if latest_changes_list:
+            return latest_changes_list
+    elif program == "intigriti.json":
+        latest_changes_list = intigriti(program)
+        if latest_changes_list:
+            return latest_changes_list
+    elif program == "yeswehack.json":
+        latest_changes_list = yeswehack(program)
         if latest_changes_list:
             return latest_changes_list
 
@@ -180,51 +215,58 @@ def gitscanner():
     for prg_file in prg_files:
         prg_name = prg_file.split(".")[0]
         latest_changes_list = changes_extractor(prg_file)
-        if latest_changes_list:
+        if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
+            print(latest_changes_list)
             # sendeit(latest_changes)
             res = ""
             removed_targets, added_targets = latest_changes_list
-            res = "Removed Targtes from {:s}:\n{:s}\n#########################\n#########################\nAdded Targets:\n{:s}\n".format(
+            res = "######################### REMOVED TARGETS FROM {:s} #########################\n\n{:s}\n\n######################### ADDED TARGETS TO {:s} #########################\n\n{:s}\n\n".format(
                 prg_name,
                 "\n".join(removed_targets),
+                prg_name,
                 "\n".join(added_targets),
             )
-            final_res = final_res + res + "\n" * 5
+            final_res = final_res + res
     logit(final_res)
 
-    # subprocess.run(
-    #    "git merge", capture_output=True, text=True, shell=True, check=True
-    # )
+    subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
     return
 
 
-try:
-    print(
-        "{:s}Trying to clone '{:s}' from '{:s}'{:s}".format(
-            col.blue, repo_name, repo_url, col.end
+def main():
+    try:
+        print(
+            "{:s}Trying to clone '{:s}' from '{:s}'{:s}".format(
+                col.blue, repo_name, repo_url, col.end
+            )
         )
-    )
-    subprocess.run(
-        "git clone -v {:s}".format(repo_url),
-        capture_output=True,
-        text=True,
-        shell=True,
-        check=True,
-    )
-    print("{:s}successfully cloned!{:s}".format(col.green, col.end))
-    gitscanner()
-except subprocess.CalledProcessError as e:
-    if e.returncode == 128:
-        if os.path.isdir(repo_name):
-            print(
-                "{:s}'{:s}' directory exists!{:s}".format(col.green, repo_name, col.end)
-            )
-            gitscanner()
-        else:
-            print(
-                "{:s}'{:s}' repository does not exist!{:s}".format(
-                    col.red, repo_name, col.end
+        subprocess.run(
+            "git clone -v {:s}".format(repo_url),
+            capture_output=True,
+            text=True,
+            shell=True,
+            check=True,
+        )
+        print("{:s}successfully cloned!{:s}".format(col.green, col.end))
+        gitscanner()
+    except subprocess.CalledProcessError as e:
+        if e.returncode == 128:
+            if os.path.isdir(repo_name):
+                print(
+                    "{:s}'{:s}' directory exists!{:s}".format(
+                        col.green, repo_name, col.end
+                    )
                 )
-            )
-    else:
-        print(e.stderr)
+                gitscanner()
+            else:
+                print(
+                    "{:s}'{:s}' repository does not exist!{:s}".format(
+                        col.red, repo_name, col.end
+                    )
+                )
+        else:
+            print(e.stderr)
+
+
+if __name__ == "__main__":
+    main()
