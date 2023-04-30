@@ -8,11 +8,11 @@ Either:
 3. Your personal account is `your.personal.account@gmail.com`.
 
 Or:
-1. you have a channel on Discord with the following URL -> `https://discord.com/api/webhooks/My-Webhook`
+1. You have a channel on Discord with the following URL -> `https://discord.com/api/webhooks/My-Webhook`
 
 Or:
 
-you have all of them together (you can use `-S`, `-R` and `-d` altogether)
+You have all of them together (you can use `-S`, `-R` and `-d` altogether)
 
 ## Usage
 
