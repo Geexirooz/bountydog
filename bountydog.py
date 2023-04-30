@@ -6,6 +6,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 import re
+import requests
 
 
 class col:
@@ -31,13 +32,8 @@ class col:
 
 # Parse arguments
 parser = argparse.ArgumentParser(
-    "gitcheck.py",
+    "bountydog.py",
     formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=40),
-)
-parser.add_argument("-r", "--repo", help="Repo to scan", dest="repo", required=True)
-
-parser.add_argument(
-    "-b", "--branch", help="Branch to scan", dest="branch", required=True
 )
 
 parser.add_argument(
@@ -45,7 +41,6 @@ parser.add_argument(
     "--sender",
     help="gmail account to send the email FROM",
     dest="email_sender",
-    required=True,
 )
 
 parser.add_argument(
@@ -53,25 +48,30 @@ parser.add_argument(
     "--receiver",
     help="gmail account to send the email TO",
     dest="email_receiver",
-    required=True,
 )
-# parser.add_argument('-c', '--count', help='Number of commits to scan (default all)', dest='count', default=sys.maxsize, type=int)
-# parser.add_argument('-v', '--verbose', help='Verbose output', dest='verbose', action='store_true', default=False)
+
+parser.add_argument(
+    "-d",
+    "--discord",
+    help="Discord's channel Webhook",
+    dest="webhook",
+    default=sys.maxsize,
+    type=str,
+)
+
 args = parser.parse_args()
 
-# args.repo needs to be sanitized
-repo_name = args.repo.rsplit("/", 1)[1]
-repo_url = args.repo
-branch = args.branch
+# Global variables
+repo_url = "https://github.com/Osb0rn3/bugbounty-targets"
+repo_name = repo_url.rsplit("/", 1)[1]
+branch = "main"
 
 
-def sendit(msg):
+def sendit(msg, sender, receiver):
     """
     Send the recent changes to a gmail account
     """
     # Define the email's components and build it
-    sender = args.email_sender
-    receiver = args.email_receiver
     email_password = os.environ.get("EMAIL_PASSWORD")
     subject = "Recent changes on the repo"
 
@@ -96,6 +96,28 @@ def logit(log):
     """
     with open("/tmp/log.txt", "a") as f:
         f.write(log)
+
+
+def discordit(msg: str, webhook: str):
+    # Discord does not allow sending a message containing more than 2000 chars
+    if len(msg) > 2000:
+        num_of_chunks = len(msg) // 1900 + 1
+        lst = msg.split("\n")
+        for i in range(num_of_chunks):
+            sized_msg = ""
+            while len(sized_msg) <= 1900 and len(lst) > 0:
+                sized_msg = sized_msg + lst.pop(0) + "\n"
+            if len(lst) != 0:
+                sized_msg = (
+                    sized_msg + "######################### To Be Continued .......\n"
+                )
+            data = {"content": sized_msg}
+            requests.post(webhook, json=data)
+    else:
+        data = {"content": msg}
+        requests.post(webhook, json=data)
+
+    return
 
 
 def run_diff(prg_file):
@@ -135,6 +157,22 @@ def regextractor(latest_changes, removed_targets_regex, new_targets_regex):
     return latest_changes_list
 
 
+def hackerone(hackerone_file):
+    """
+    Extract hackerone changes
+    """
+    latest_changes = run_diff(hackerone_file)
+
+    removed_targets_regex = r"-\s*\"attributes\":\s{\n-\s*\"asset_type\":\s[^-]*-\s*\"asset_identifier\":\s\"([^\"]*)\""
+    new_targets_regex = r"\+\s*\"attributes\":\s{\n\+\s*\"asset_type\":\s[^-]*\+\s*\"asset_identifier\":\s\"([^\"]*)\""
+
+    latest_changes_list = regextractor(
+        latest_changes, removed_targets_regex, new_targets_regex
+    )
+
+    return latest_changes_list
+
+
 def bugcrowd(bugcrowd_file):
     """
     Extract bugcrowd changes
@@ -147,22 +185,6 @@ def bugcrowd(bugcrowd_file):
     new_targets_regex = (
         r"\+\s*\"targets\":\s\[\n\+[^{]*{\n\+[^,]*,\n\+\s*\"name\":\s\"([^\"]*)\","
     )
-    latest_changes_list = regextractor(
-        latest_changes, removed_targets_regex, new_targets_regex
-    )
-
-    return latest_changes_list
-
-
-def hackerone(hackerone_file):
-    """
-    Extract hackerone changes
-    """
-    latest_changes = run_diff(hackerone_file)
-
-    removed_targets_regex = r"-\s*\"attributes\":\s{\n-\s*\"asset_type\":\s[^-]*-\s*\"asset_identifier\":\s\"([^\"]*)\""
-    new_targets_regex = r"\+\s*\"attributes\":\s{\n\+\s*\"asset_type\":\s[^-]*\+\s*\"asset_identifier\":\s\"([^\"]*)\""
-
     latest_changes_list = regextractor(
         latest_changes, removed_targets_regex, new_targets_regex
     )
@@ -245,24 +267,7 @@ def bountydog():
         else:
             sendit("Apparently new program is added to bugbounty-targets repository!")
 
-        # Python 3.10 and above
-
-        # match prg_name:
-        #    case "hackerone":
-        #        latest_changes_list = hackerone(prg_file)
-        #    case "bugcrowd":
-        #        latest_changes_list = bugcrowd(prg_file)
-        #    case "intigriti":
-        #        latest_changes_list = intigriti(prg_file)
-        #    case "yeswehack":
-        #        latest_changes_list = yeswehack(prg_file)
-        #    case _:
-        #        sendit(
-        #            "Apparently new program is added to bugbounty-targets repository!"
-        #        )
-
         # Create a msg
-        # if latest_changes_list and (len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0):
         if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
             res = ""
             removed_targets, added_targets = latest_changes_list
@@ -277,7 +282,17 @@ def bountydog():
     final_res = final_res + trailing
     if final_res != trailing:
         logit(final_res)
-        sendit(final_res)
+        if args.email_sender and args.email_receiver:
+            try:
+                sendit(final_res, args.email_sender, args.email_receiver)
+            except Exception:
+                print(
+                    "You have either not set {:s}EMAIL_PASSWORD environment{:s} variable OR hit your {:s}daily quota{:s}!".format(
+                        col.red, col.end, col.red, col.end
+                    )
+                )
+        if args.webhook:
+            discordit(final_res, args.webhook)
 
     # Merge the changes
     subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
