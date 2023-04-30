@@ -11,6 +11,7 @@ Or:
 1. you have a channel on Discord with the following URL -> `https://discord.com/api/webhooks/My-Webhook`
 
 Or:
+
 you have all of them together (you can use `-S`, `-R` and `-d` altogether)
 
 ## Usage
