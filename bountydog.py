@@ -88,6 +88,7 @@ def sendit(msg: str, sender: str, receiver: str) -> None:
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
         smtp.login(sender, email_password)
         smtp.sendmail(sender, receiver, em.as_string())
+
     return
 
 
@@ -97,6 +98,7 @@ def logit(log: str) -> None:
     """
     with open("/tmp/log.txt", "a") as f:
         f.write(log)
+
     return
 
 
@@ -133,6 +135,7 @@ def run_diff(prg_file: str) -> str:
         shell=True,
         check=True,
     ).stdout
+
     return latest_changes
 
 
@@ -158,6 +161,7 @@ def regextractor(
 
     # Return them as a list
     latest_changes_list = [rm_targets, new_targets]
+
     return latest_changes_list
 
 
@@ -226,6 +230,7 @@ def yeswehack(yeswehack_file: str) -> list:
     latest_changes_list = regextractor(
         latest_changes, removed_targets_regex, new_targets_regex
     )
+
     return latest_changes_list
 
 
@@ -300,6 +305,7 @@ def bountydog() -> None:
 
     # Merge the changes
     subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
+
     return
 
 
@@ -344,6 +350,7 @@ def main():
                 )
         else:
             print(e.stderr)
+
     return
 
 
