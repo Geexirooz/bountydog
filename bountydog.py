@@ -67,7 +67,7 @@ repo_name = repo_url.rsplit("/", 1)[1]
 branch = "main"
 
 
-def sendit(msg, sender, receiver):
+def sendit(msg: str, sender: str, receiver: str) -> None:
     """
     Send the recent changes to a gmail account
     """
@@ -88,17 +88,19 @@ def sendit(msg, sender, receiver):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
         smtp.login(sender, email_password)
         smtp.sendmail(sender, receiver, em.as_string())
+    return
 
 
-def logit(log):
+def logit(log: str) -> None:
     """
     Write to a log file
     """
     with open("/tmp/log.txt", "a") as f:
         f.write(log)
+    return
 
 
-def discordit(msg: str, webhook: str):
+def discordit(msg: str, webhook: str) -> None:
     # Discord does not allow sending a message containing more than 2000 chars
     if len(msg) > 2000:
         num_of_chunks = len(msg) // 1900 + 1
@@ -120,7 +122,7 @@ def discordit(msg: str, webhook: str):
     return
 
 
-def run_diff(prg_file):
+def run_diff(prg_file: str) -> str:
     """
     Run git diff command on prg_file
     """
@@ -134,7 +136,9 @@ def run_diff(prg_file):
     return latest_changes
 
 
-def regextractor(latest_changes, removed_targets_regex, new_targets_regex):
+def regextractor(
+    latest_changes: str, removed_targets_regex: str, new_targets_regex: str
+) -> list:
     """
     Extract changed targets using regex
     """
@@ -157,7 +161,7 @@ def regextractor(latest_changes, removed_targets_regex, new_targets_regex):
     return latest_changes_list
 
 
-def hackerone(hackerone_file):
+def hackerone(hackerone_file: str) -> list:
     """
     Extract hackerone changes
     """
@@ -173,7 +177,7 @@ def hackerone(hackerone_file):
     return latest_changes_list
 
 
-def bugcrowd(bugcrowd_file):
+def bugcrowd(bugcrowd_file: str) -> list:
     """
     Extract bugcrowd changes
     """
@@ -192,7 +196,7 @@ def bugcrowd(bugcrowd_file):
     return latest_changes_list
 
 
-def intigriti(intigriti_file):
+def intigriti(intigriti_file: str) -> list:
     """
     Extract intigriti changes
     """
@@ -212,7 +216,7 @@ def intigriti(intigriti_file):
     return latest_changes_list
 
 
-def yeswehack(yeswehack_file):
+def yeswehack(yeswehack_file: str) -> list:
     """
     Extract yeswehack changes
     """
@@ -225,7 +229,7 @@ def yeswehack(yeswehack_file):
     return latest_changes_list
 
 
-def bountydog():
+def bountydog() -> None:
     """
     1.Fetch the remote repository
     2.Create a msg including the changes
@@ -340,6 +344,7 @@ def main():
                 )
         else:
             print(e.stderr)
+    return
 
 
 if __name__ == "__main__":
