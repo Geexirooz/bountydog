@@ -109,7 +109,7 @@ def discordit(msg: str, webhook: str):
                 sized_msg = sized_msg + lst.pop(0) + "\n"
             if len(lst) != 0:
                 sized_msg = (
-                    sized_msg + "######################### To Be Continued .......\n"
+                    sized_msg + "#########################\nTo Be Continued .......\n"
                 )
             data = {"content": sized_msg}
             requests.post(webhook, json=data)
@@ -250,7 +250,7 @@ def bountydog():
     )
 
     final_res = ""
-    trailing = "######################### THE END #########################\n\n"
+    trailing = "#########################\nTHE END\n#########################\n\n"
 
     # Find the changes to each program
     for prg_file in prg_files:
@@ -271,7 +271,7 @@ def bountydog():
         if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
             res = ""
             removed_targets, added_targets = latest_changes_list
-            res = "######################### REMOVED TARGETS FROM {:s} #########################\n\n{:s}\n\n######################### ADDED TARGETS TO {:s} #########################\n\n{:s}\n\n".format(
+            res = "#########################\nREMOVED TARGETS FROM {:s}\n#########################\n\n{:s}\n\n#########################\nADDED TARGETS TO {:s}\n#########################\n\n{:s}\n\n".format(
                 prg_name,
                 "\n".join(removed_targets),
                 prg_name,
