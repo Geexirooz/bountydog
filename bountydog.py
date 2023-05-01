@@ -113,7 +113,8 @@ def discordit(msg: str, webhook: str) -> None:
                 sized_msg = sized_msg + lst.pop(0) + "\n"
             if len(lst) != 0:
                 sized_msg = (
-                    sized_msg + "#########################\nTo Be Continued .......\n"
+                    sized_msg
+                    + "#########################\nTo Be Continued .......\n#########################\n"
                 )
             data = {"content": sized_msg}
             requests.post(webhook, json=data)
@@ -275,6 +276,9 @@ def bountydog() -> None:
             latest_changes_list = yeswehack(prg_file)
         else:
             sendit("Apparently new program is added to bugbounty-targets repository!")
+            discordit(
+                "Apparently new program is added to bugbounty-targets repository!"
+            )
 
         # Create a msg
         if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
