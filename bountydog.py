@@ -5,7 +5,6 @@ import sys
 import smtplib
 import ssl
 from email.message import EmailMessage
-import re
 import requests
 import json
 
