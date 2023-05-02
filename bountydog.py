@@ -287,12 +287,42 @@ def intigriti(intigriti_file: str) -> list:
     ]
 
 
+def yeswehack_scope_extractor(yeswehack_file_path: str):
+    with open(yeswehack_file_path, "r") as f:
+        yeswehack_in_scope = set()
+        yeswehack_out_of_scope = set()
+        yeswehack_prg_list = json.loads(f.read())
+        for prg_json in yeswehack_prg_list:
+            for key, value in prg_json.items():
+                if key == "scopes":
+                    for target_json in value:
+                        yeswehack_in_scope.add(target_json["scope"])
+    return [yeswehack_in_scope, yeswehack_out_of_scope]
+
+
 def yeswehack(yeswehack_file: str) -> list:
     """
     Extract yeswehack changes
     """
+    downloadit(yeswehack_file)
 
-    return
+    old_in_scope, old_out_of_scope = yeswehack_scope_extractor(
+        "programs/yeswehack.json"
+    )
+    new_in_scope, new_out_of_scope = yeswehack_scope_extractor("/tmp/yeswehack.json")
+
+    newly_added_in_scope = new_in_scope.difference(old_in_scope)
+    newly_removed_in_scope = old_in_scope.difference(new_in_scope)
+
+    newly_added_out_of_scope = new_out_of_scope.difference(old_out_of_scope)
+    newly_removed_out_of_scope = old_out_of_scope.difference(new_out_of_scope)
+
+    return [
+        newly_added_in_scope,
+        newly_removed_in_scope,
+        newly_added_out_of_scope,
+        newly_removed_out_of_scope,
+    ]
 
 
 def bountydog() -> None:
@@ -332,19 +362,13 @@ def bountydog() -> None:
             latest_changes_list = hackerone(prg_file)
         elif prg_file == "intigriti.json":
             latest_changes_list = intigriti(prg_file)
+        elif prg_file == "yeswehack.json":
+            latest_changes_list = yeswehack(prg_file)
         else:
-            break
-        # elif prg_file == "hackerone.json":
-        #    latest_changes_list = hackerone(prg_file)
-        # elif prg_file == "intigriti.json":
-        #    latest_changes_list = intigriti(prg_file)
-        # elif prg_file == "yeswehack.json":
-        #    latest_changes_list = yeswehack(prg_file)
-        # else:
-        #    sendit("Apparently new program is added to bugbounty-targets repository!")
-        #    discordit(
-        #        "Apparently new program is added to bugbounty-targets repository!"
-        #    )
+            sendit("Apparently new program is added to bugbounty-targets repository!")
+            discordit(
+                "Apparently new program is added to bugbounty-targets repository!"
+            )
         # Create a msg
         #    if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
         res = ""
@@ -382,23 +406,22 @@ def bountydog() -> None:
             )
 
         final_res = final_res + res
-        ## Final message
+
+    ## Final message
     final_res = final_res + trailing
     if final_res != trailing:
         if args.webhook:
             discordit(final_res, args.webhook)
-    #    logit(final_res)
-    #    if args.email_sender and args.email_receiver:
-    #        try:
-    #            sendit(final_res, args.email_sender, args.email_receiver)
-    #        except Exception:
-    #            print(
-    #                "You have either not set {:s}EMAIL_PASSWORD environment{:s} variable OR hit your {:s}daily quota{:s}!".format(
-    #                    col.red, col.end, col.red, col.end
-    #                )
-    #            )
-    #    if args.webhook:
-    #        discordit(final_res, args.webhook)
+        logit(final_res)
+        if args.email_sender and args.email_receiver:
+            try:
+                sendit(final_res, args.email_sender, args.email_receiver)
+            except Exception:
+                print(
+                    "You have either not set {:s}EMAIL_PASSWORD environment{:s} variable OR hit your {:s}daily quota{:s}!".format(
+                        col.red, col.end, col.red, col.end
+                    )
+                )
 
     # Merge the changes
     subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
