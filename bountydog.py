@@ -342,7 +342,6 @@ def bountydog() -> None:
         ## Final message
     final_res = final_res + trailing
     if final_res != trailing:
-        print(final_res)
         if args.webhook:
             discordit(final_res, args.webhook)
     #    logit(final_res)
