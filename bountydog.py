@@ -126,12 +126,57 @@ def discordit(msg: str, webhook: str) -> None:
     return
 
 
+def hackerone_scope_extractor(hackerone_file_path: str):
+    with open(hackerone_file_path, "r") as f:
+        hackerone_in_scope = set()
+        hackerone_out_of_scope = set()
+        hackerone_prg_list = json.loads(f.read())
+        for prg_json in hackerone_prg_list:
+            for key, value in prg_json.items():
+                if key == "relationships":
+                    targets_list = value["structured_scopes"]["data"]
+                    for target_json in targets_list:
+                        if (
+                            " " not in target_json["attributes"]["asset_identifier"]
+                            and "." in target_json["attributes"]["asset_identifier"]
+                        ):
+                            scope = target_json["attributes"]["asset_identifier"]
+                            hackerone_in_scope.add(scope)
+
+    return [hackerone_in_scope, hackerone_out_of_scope]
+
+
 def hackerone(hackerone_file: str) -> list:
     """
     Extract hackerone changes
     """
+    dl = "wget https://raw.githubusercontent.com/Osb0rn3/bugbounty-targets/main/programs/hackerone.json -O /tmp/hackerone.json"
 
-    return
+    subprocess.run(
+        dl,
+        capture_output=True,
+        text=True,
+        shell=True,
+        check=True,
+    )
+
+    old_in_scope, old_out_of_scope = hackerone_scope_extractor(
+        "programs/hackerone.json"
+    )
+    new_in_scope, new_out_of_scope = hackerone_scope_extractor("/tmp/hackerone.json")
+
+    newly_added_in_scope = new_in_scope.difference(old_in_scope)
+    newly_removed_in_scope = old_in_scope.difference(new_in_scope)
+
+    newly_added_out_of_scope = new_out_of_scope.difference(old_out_of_scope)
+    newly_removed_out_of_scope = old_out_of_scope.difference(new_out_of_scope)
+
+    return [
+        newly_added_in_scope,
+        newly_removed_in_scope,
+        newly_added_out_of_scope,
+        newly_removed_out_of_scope,
+    ]
 
 
 def bugcrowd_scope_extractor(bugcrowd_file_path: str):
@@ -242,6 +287,8 @@ def bountydog() -> None:
         # Python older than 3.10
         if prg_file == "bugcrowd.json":
             latest_changes_list = bugcrowd(prg_file)
+        elif prg_file == "hackerone.json":
+            latest_changes_list = hackerone(prg_file)
         else:
             break
         # elif prg_file == "hackerone.json":
@@ -293,9 +340,11 @@ def bountydog() -> None:
 
         final_res = final_res + res
         ## Final message
-        final_res = final_res + trailing
-        if final_res != trailing:
-            print(final_res)
+    final_res = final_res + trailing
+    if final_res != trailing:
+        print(final_res)
+        if args.webhook:
+            discordit(final_res, args.webhook)
     #    logit(final_res)
     #    if args.email_sender and args.email_receiver:
     #        try:
@@ -310,7 +359,7 @@ def bountydog() -> None:
     #        discordit(final_res, args.webhook)
 
     # Merge the changes
-    # subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
+    subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
 
     return
 
