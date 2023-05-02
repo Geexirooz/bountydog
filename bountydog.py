@@ -7,6 +7,7 @@ import ssl
 from email.message import EmailMessage
 import re
 import requests
+import json
 
 
 class col:
@@ -125,114 +126,87 @@ def discordit(msg: str, webhook: str) -> None:
     return
 
 
-def run_diff(prg_file: str) -> str:
-    """
-    Run git diff command on prg_file
-    """
-    latest_changes = subprocess.run(
-        "git diff origin/main -- programs/{:s}".format(prg_file),
-        capture_output=True,
-        text=True,
-        shell=True,
-        check=True,
-    ).stdout
-
-    return latest_changes
-
-
-def regextractor(
-    latest_changes: str, removed_targets_regex: str, new_targets_regex: str
-) -> list:
-    """
-    Extract changed targets using regex
-    """
-    # Find excluded targets
-    matched_removed_targets = re.findall(removed_targets_regex, latest_changes)
-    rm_targets = []
-    for matched_target in matched_removed_targets:
-        if " " not in matched_target and "." in matched_target:
-            rm_targets.append(matched_target.strip())
-
-    # Find included matches
-    matched_addeded_targets = re.findall(new_targets_regex, latest_changes)
-    new_targets = []
-    for matched_target in matched_addeded_targets:
-        if " " not in matched_target and "." in matched_target:
-            new_targets.append(matched_target.strip())
-
-    # Return them as a list
-    latest_changes_list = [rm_targets, new_targets]
-
-    return latest_changes_list
-
-
 def hackerone(hackerone_file: str) -> list:
     """
     Extract hackerone changes
     """
-    latest_changes = run_diff(hackerone_file)
 
-    removed_targets_regex = r"-\s*\"attributes\":\s{\n-\s*\"asset_type\":\s[^-]*-\s*\"asset_identifier\":\s\"([^\"]*)\""
-    new_targets_regex = r"\+\s*\"attributes\":\s{\n\+\s*\"asset_type\":\s[^-]*\+\s*\"asset_identifier\":\s\"([^\"]*)\""
-
-    latest_changes_list = regextractor(
-        latest_changes, removed_targets_regex, new_targets_regex
-    )
-
-    return latest_changes_list
+    return
 
 
-def bugcrowd(bugcrowd_file: str) -> list:
+def bugcrowd_scope_extractor(bugcrowd_file_path: str):
+    with open(bugcrowd_file_path, "r") as f:
+        bugcrowd_in_scope = set()
+        bugcrowd_out_of_scope = set()
+        bugcrowd_prg_list = json.loads(f.read())
+        for prg_json in bugcrowd_prg_list:
+            for key, value in prg_json.items():
+                if key == "target_groups":
+                    # lst_of_target_jsons = value
+                    for targets_json in value:
+                        for targets_key, targets_value in targets_json.items():
+                            if targets_key == "targets":
+                                for each_target_json in targets_value:
+                                    if (
+                                        " " not in each_target_json["name"]
+                                        and "." in each_target_json["name"]
+                                    ):
+                                        scope = each_target_json["name"]
+                                    elif each_target_json["uri"]:
+                                        scope = each_target_json["uri"]
+                                    if targets_json["in_scope"] and scope:
+                                        bugcrowd_in_scope.add(scope)
+                                    elif not targets_json["in_scope"] and scope:
+                                        bugcrowd_out_of_scope.add(scope)
+
+        return [bugcrowd_in_scope, bugcrowd_out_of_scope]
+
+
+def bugcrowd(bugcrowd_file: str) -> set:
     """
     Extract bugcrowd changes
     """
-    latest_changes = run_diff(bugcrowd_file)
+    dl = "wget https://raw.githubusercontent.com/Osb0rn3/bugbounty-targets/main/programs/bugcrowd.json -O /tmp/bugcrowd.json"
 
-    removed_targets_regex = (
-        r"-\s*\"targets\":\s\[\n-[^{]*{\n-[^,]*,\n-\s*\"name\":\s\"([^\"]*)\","
-    )
-    new_targets_regex = (
-        r"\+\s*\"targets\":\s\[\n\+[^{]*{\n\+[^,]*,\n\+\s*\"name\":\s\"([^\"]*)\","
-    )
-    latest_changes_list = regextractor(
-        latest_changes, removed_targets_regex, new_targets_regex
+    subprocess.run(
+        dl,
+        capture_output=True,
+        text=True,
+        shell=True,
+        check=True,
     )
 
-    return latest_changes_list
+    old_in_scope, old_out_of_scope = bugcrowd_scope_extractor("programs/bugcrowd.json")
+    new_in_scope, new_out_of_scope = bugcrowd_scope_extractor("/tmp/bugcrowd.json")
+
+    newly_added_in_scope = new_in_scope.difference(old_in_scope)
+    newly_removed_in_scope = old_in_scope.difference(new_in_scope)
+
+    newly_added_out_of_scope = new_out_of_scope.difference(old_out_of_scope)
+    newly_removed_out_of_scope = old_out_of_scope.difference(new_out_of_scope)
+
+    return [
+        newly_added_in_scope,
+        newly_removed_in_scope,
+        newly_added_out_of_scope,
+        newly_removed_out_of_scope,
+    ]
 
 
 def intigriti(intigriti_file: str) -> list:
     """
     Extract intigriti changes
     """
-    latest_changes = run_diff(intigriti_file)
 
-    removed_targets_regex = (
-        r"-\s*\"id\"[^\+]*-\s*\"type\"[^-]*-\s*\"endpoint\":\s\"([^\"]*)\""
-    )
-    new_targets_regex = (
-        r"\+\s*\"id\"[^\+]*\+\s*\"type\"[^\+]*\+\s*\"endpoint\":\s\"([^\"]*)\""
-    )
-
-    latest_changes_list = regextractor(
-        latest_changes, removed_targets_regex, new_targets_regex
-    )
-
-    return latest_changes_list
+    return
 
 
 def yeswehack(yeswehack_file: str) -> list:
     """
     Extract yeswehack changes
     """
-    latest_changes = run_diff(yeswehack_file)
-    removed_targets_regex = r"-\s*\"scope\":\s\"([^\"]*)\"[^-]*-\s*\"scope_type\""
-    new_targets_regex = r"\+\s*\"scope\":\s\"([^\"]*)\"[^\+]*\+\s*\"scope_type\""
-    latest_changes_list = regextractor(
-        latest_changes, removed_targets_regex, new_targets_regex
-    )
 
-    return latest_changes_list
+    return
 
 
 def bountydog() -> None:
@@ -268,47 +242,75 @@ def bountydog() -> None:
         # Python older than 3.10
         if prg_file == "bugcrowd.json":
             latest_changes_list = bugcrowd(prg_file)
-        elif prg_file == "hackerone.json":
-            latest_changes_list = hackerone(prg_file)
-        elif prg_file == "intigriti.json":
-            latest_changes_list = intigriti(prg_file)
-        elif prg_file == "yeswehack.json":
-            latest_changes_list = yeswehack(prg_file)
         else:
-            sendit("Apparently new program is added to bugbounty-targets repository!")
-            discordit(
-                "Apparently new program is added to bugbounty-targets repository!"
+            break
+        # elif prg_file == "hackerone.json":
+        #    latest_changes_list = hackerone(prg_file)
+        # elif prg_file == "intigriti.json":
+        #    latest_changes_list = intigriti(prg_file)
+        # elif prg_file == "yeswehack.json":
+        #    latest_changes_list = yeswehack(prg_file)
+        # else:
+        #    sendit("Apparently new program is added to bugbounty-targets repository!")
+        #    discordit(
+        #        "Apparently new program is added to bugbounty-targets repository!"
+        #    )
+        # Create a msg
+        #    if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
+        res = ""
+        (
+            newly_added_in_scope,
+            newly_removed_in_scope,
+            newly_added_out_of_scope,
+            newly_removed_out_of_scope,
+        ) = latest_changes_list
+
+        if len(newly_added_in_scope) > 0:
+            res = "#########################\nADDED in-scope TARGETS TO {:s}\n#########################\n\n{:s}\n\n".format(
+                prg_name.capitalize(), "\n".join(newly_added_in_scope)
+            )
+        if len(newly_removed_in_scope) > 0:
+            res = (
+                res
+                + "#########################\nREMOVED in-scope TARGETS FROM {:s}\n#########################\n\n{:s}\n\n".format(
+                    prg_name.capitalize(), "\n".join(newly_removed_in_scope)
+                )
+            )
+        if len(newly_added_out_of_scope) > 0:
+            res = (
+                res
+                + "#########################\nADDEED out-of-scope TARGETS TO {:s}\n#########################\n\n{:s}\n\n".format(
+                    prg_name.capitalize(), "\n".join(newly_added_out_of_scope)
+                )
+            )
+        if len(newly_removed_out_of_scope) > 0:
+            res = (
+                res
+                + "#########################\nREMOVED out-of-scope TARGETS FROM {:s}\n#########################\n\n{:s}\n\n".format(
+                    prg_name.capitalize(), "\n".join(newly_removed_out_of_scope)
+                )
             )
 
-        # Create a msg
-        if len(latest_changes_list[0]) > 0 or len(latest_changes_list[1]) > 0:
-            res = ""
-            removed_targets, added_targets = latest_changes_list
-            res = "#########################\nREMOVED TARGETS FROM {:s}\n#########################\n\n{:s}\n\n#########################\nADDED TARGETS TO {:s}\n#########################\n\n{:s}\n\n".format(
-                prg_name,
-                "\n".join(removed_targets),
-                prg_name,
-                "\n".join(added_targets),
-            )
-            final_res = final_res + res
-    # Final message
-    final_res = final_res + trailing
-    if final_res != trailing:
-        logit(final_res)
-        if args.email_sender and args.email_receiver:
-            try:
-                sendit(final_res, args.email_sender, args.email_receiver)
-            except Exception:
-                print(
-                    "You have either not set {:s}EMAIL_PASSWORD environment{:s} variable OR hit your {:s}daily quota{:s}!".format(
-                        col.red, col.end, col.red, col.end
-                    )
-                )
-        if args.webhook:
-            discordit(final_res, args.webhook)
+        final_res = final_res + res
+        ## Final message
+        final_res = final_res + trailing
+        if final_res != trailing:
+            print(final_res)
+    #    logit(final_res)
+    #    if args.email_sender and args.email_receiver:
+    #        try:
+    #            sendit(final_res, args.email_sender, args.email_receiver)
+    #        except Exception:
+    #            print(
+    #                "You have either not set {:s}EMAIL_PASSWORD environment{:s} variable OR hit your {:s}daily quota{:s}!".format(
+    #                    col.red, col.end, col.red, col.end
+    #                )
+    #            )
+    #    if args.webhook:
+    #        discordit(final_res, args.webhook)
 
     # Merge the changes
-    subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
+    # subprocess.run("git merge", capture_output=True, text=True, shell=True, check=True)
 
     return
 
