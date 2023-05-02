@@ -249,12 +249,42 @@ def bugcrowd(bugcrowd_file: str) -> set:
     ]
 
 
+def intigriti_scope_extractor(intigriti_file_path: str):
+    with open(intigriti_file_path, "r") as f:
+        intigriti_in_scope = set()
+        intigriti_out_of_scope = set()
+        intigriti_prg_list = json.loads(f.read())
+        for prg_json in intigriti_prg_list:
+            for key, value in prg_json.items():
+                if key == "domains":
+                    for target_json in value:
+                        intigriti_in_scope.add(target_json["endpoint"])
+    return [intigriti_in_scope, intigriti_out_of_scope]
+
+
 def intigriti(intigriti_file: str) -> list:
     """
     Extract intigriti changes
     """
+    downloadit(intigriti_file)
 
-    return
+    old_in_scope, old_out_of_scope = intigriti_scope_extractor(
+        "programs/intigriti.json"
+    )
+    new_in_scope, new_out_of_scope = intigriti_scope_extractor("/tmp/intigriti.json")
+
+    newly_added_in_scope = new_in_scope.difference(old_in_scope)
+    newly_removed_in_scope = old_in_scope.difference(new_in_scope)
+
+    newly_added_out_of_scope = new_out_of_scope.difference(old_out_of_scope)
+    newly_removed_out_of_scope = old_out_of_scope.difference(new_out_of_scope)
+
+    return [
+        newly_added_in_scope,
+        newly_removed_in_scope,
+        newly_added_out_of_scope,
+        newly_removed_out_of_scope,
+    ]
 
 
 def yeswehack(yeswehack_file: str) -> list:
@@ -300,6 +330,8 @@ def bountydog() -> None:
             latest_changes_list = bugcrowd(prg_file)
         elif prg_file == "hackerone.json":
             latest_changes_list = hackerone(prg_file)
+        elif prg_file == "intigriti.json":
+            latest_changes_list = intigriti(prg_file)
         else:
             break
         # elif prg_file == "hackerone.json":
