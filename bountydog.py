@@ -127,6 +127,22 @@ def discordit(msg: str, webhook: str) -> None:
     return
 
 
+def downloadit(prg_file) -> None:
+    dl = "wget https://raw.githubusercontent.com/Osb0rn3/bugbounty-targets/main/programs/{:s} -O /tmp/{:s}".format(
+        prg_file, prg_file
+    )
+
+    subprocess.run(
+        dl,
+        capture_output=True,
+        text=True,
+        shell=True,
+        check=True,
+    )
+
+    return None
+
+
 def hackerone_scope_extractor(hackerone_file_path: str):
     with open(hackerone_file_path, "r") as f:
         hackerone_in_scope = set()
@@ -161,15 +177,7 @@ def hackerone(hackerone_file: str) -> list:
     """
     Extract hackerone changes
     """
-    dl = "wget https://raw.githubusercontent.com/Osb0rn3/bugbounty-targets/main/programs/hackerone.json -O /tmp/hackerone.json"
-
-    subprocess.run(
-        dl,
-        capture_output=True,
-        text=True,
-        shell=True,
-        check=True,
-    )
+    downloadit(hackerone_file)
 
     old_in_scope, old_out_of_scope = hackerone_scope_extractor(
         "programs/hackerone.json"
@@ -222,15 +230,7 @@ def bugcrowd(bugcrowd_file: str) -> set:
     """
     Extract bugcrowd changes
     """
-    dl = "wget https://raw.githubusercontent.com/Osb0rn3/bugbounty-targets/main/programs/bugcrowd.json -O /tmp/bugcrowd.json"
-
-    subprocess.run(
-        dl,
-        capture_output=True,
-        text=True,
-        shell=True,
-        check=True,
-    )
+    downloadit(bugcrowd_file)
 
     old_in_scope, old_out_of_scope = bugcrowd_scope_extractor("programs/bugcrowd.json")
     new_in_scope, new_out_of_scope = bugcrowd_scope_extractor("/tmp/bugcrowd.json")
