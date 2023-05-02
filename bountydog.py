@@ -141,7 +141,17 @@ def hackerone_scope_extractor(hackerone_file_path: str):
                             and "." in target_json["attributes"]["asset_identifier"]
                         ):
                             scope = target_json["attributes"]["asset_identifier"]
+
+                        if (
+                            scope
+                            and target_json["attributes"]["eligible_for_submission"]
+                        ):
                             hackerone_in_scope.add(scope)
+                        elif (
+                            scope
+                            and not target_json["attributes"]["eligible_for_submission"]
+                        ):
+                            hackerone_out_of_scope.add(scope)
 
     return [hackerone_in_scope, hackerone_out_of_scope]
 
