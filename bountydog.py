@@ -108,17 +108,18 @@ def discordit(msg: str, webhook: str) -> None:
     if len(msg) > 2000:
         num_of_chunks = len(msg) // 1900 + 1
         lst = msg.split("\n")
+        sized_msg = ""
         for i in range(num_of_chunks):
-            sized_msg = ""
             while len(sized_msg) <= 1900 and len(lst) > 0:
                 sized_msg = sized_msg + lst.pop(0) + "\n"
             if len(lst) != 0:
                 sized_msg = (
                     sized_msg
-                    + "#########################\nTo Be Continued .......\n#########################\n"
+                    + "```\n#########################\nTo Be Continued .......\n#########################\n"
                 )
             data = {"content": sized_msg}
             requests.post(webhook, json=data)
+            sized_msg = "```"
     else:
         data = {"content": msg}
         requests.post(webhook, json=data)
@@ -323,27 +324,27 @@ def bountydog() -> None:
         ) = latest_changes_list
 
         if len(newly_added_in_scope) > 0:
-            res = "#########################\nADDED in-scope TARGETS TO {:s}\n#########################\n\n{:s}\n\n".format(
+            res = "#########################\nADDED in-scope TARGETS TO {:s}\n#########################\n```\n{:s}\n```\n".format(
                 prg_name.capitalize(), "\n".join(newly_added_in_scope)
             )
         if len(newly_removed_in_scope) > 0:
             res = (
                 res
-                + "#########################\nREMOVED in-scope TARGETS FROM {:s}\n#########################\n\n{:s}\n\n".format(
+                + "#########################\nREMOVED in-scope TARGETS FROM {:s}\n#########################\n```\n{:s}\n```\n".format(
                     prg_name.capitalize(), "\n".join(newly_removed_in_scope)
                 )
             )
         if len(newly_added_out_of_scope) > 0:
             res = (
                 res
-                + "#########################\nADDEED out-of-scope TARGETS TO {:s}\n#########################\n\n{:s}\n\n".format(
+                + "#########################\nADDEED out-of-scope TARGETS TO {:s}\n#########################\n```\n{:s}\n```\n".format(
                     prg_name.capitalize(), "\n".join(newly_added_out_of_scope)
                 )
             )
         if len(newly_removed_out_of_scope) > 0:
             res = (
                 res
-                + "#########################\nREMOVED out-of-scope TARGETS FROM {:s}\n#########################\n\n{:s}\n\n".format(
+                + "#########################\nREMOVED out-of-scope TARGETS FROM {:s}\n#########################\n```\n{:s}\n```\n".format(
                     prg_name.capitalize(), "\n".join(newly_removed_out_of_scope)
                 )
             )
