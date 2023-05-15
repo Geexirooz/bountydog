@@ -338,7 +338,7 @@ def bountydog() -> None:
     # Get a list of programs
     prg_files = (
         subprocess.run(
-            "ls programs".format(branch, branch),
+            "ls programs",
             capture_output=True,
             text=True,
             shell=True,
