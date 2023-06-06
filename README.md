@@ -1,5 +1,7 @@
 # BountyDog
 
+This tool monitors [this repository](https://github.com/Osb0rn3/bugbounty-targets) to find the latest scopes on HackerOne, Bugcrowd, Intigrity, Yeswehack bugbounty platforms. The deployment is explained via an example in the following.
+
 Let's assume that:
 
 Either:
